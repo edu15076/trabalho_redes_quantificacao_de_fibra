@@ -16,7 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.views.generic import TemplateView
+
+from fibra.view import QuantificacaoView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('quantificacao/', QuantificacaoView.as_view(), name='quantificacao_form'),
+    path('quantificacao/sucesso/', TemplateView.as_view(template_name='sucesso.html'), name='quantificacao_sucesso'),
 ]

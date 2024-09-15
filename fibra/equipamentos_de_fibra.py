@@ -70,11 +70,11 @@ class DIO(EquipamentoDeFibra):
 
     @property
     def _quantidade_de_dios(self) -> int:
-        return math.ceil((self.disciplinas * 2) / 24 ) 
+        return math.ceil(self.disciplinas / 12)
     
     @property
     def _quantidade_de_caixas_de_emenda(self) -> int:
-        return math.ceil((self.disciplinas * 2) / 12 ) 
+        return math.ceil(self.disciplinas / 6)
 
     @property
     def _quantidade_de_pig_tails_simples(self) -> int:
@@ -87,6 +87,8 @@ class DIO(EquipamentoDeFibra):
     @property
     def _quantidade_de_acopladores_lc_duplo(self) -> int:
         return self.disciplinas
+
+
 class TO(EquipamentoDeFibra):
     def __init__(self, disciplinas):
         super().__init__(disciplinas)
@@ -105,18 +107,18 @@ class TO(EquipamentoDeFibra):
 
     @property
     def _quantidade_de_terminadores_opticos(self) -> int:
-        return math.ceil((self.disciplinas * 2) / 8) 
+        return math.ceil(self.disciplinas / 4)
     
     @property
     def _quantidade_de_pig_tails_duplos(self) -> int:
-        return (self._quantidade_de_terminadores_opticos * 8) // 2 
+        return self._quantidade_de_terminadores_opticos * 4
 
-#*if __name__ == "__main__":
-#     dio_interno = DIO(12)
-#     dio_externo = DIO(4)
-#     to_set = TO(4)
-#     print(f"DIO INTERNO: {dio_interno.quantificacao_de_equipamentos}")
-#     print(f"DIO EXTERNO: {dio_externo.quantificacao_de_equipamentos}")
-#     print(f"TO SET: {to_set.quantificacao_de_equipamentos}")
+if __name__ == "__main__":
+    dio_interno = DIO(12)
+    dio_externo = DIO(4)
+    to_set = TO(4)
+    print(f"DIO INTERNO: {dio_interno.quantificacao_de_equipamentos}")
+    print(f"DIO EXTERNO: {dio_externo.quantificacao_de_equipamentos + dio_interno.quantificacao_de_equipamentos}")
+    print(f"TO SET: {to_set.quantificacao_de_equipamentos}")
 
-#     print(f"Exercicio do adelson {dio_interno.quantificacao_de_equipamentos + dio_externo.quantificacao_de_equipamentos + to_set.quantificacao_de_equipamentos * 3}") 
+    print(f"Exercicio do adelson {dio_interno.quantificacao_de_equipamentos + dio_externo.quantificacao_de_equipamentos + to_set.quantificacao_de_equipamentos * 3}")

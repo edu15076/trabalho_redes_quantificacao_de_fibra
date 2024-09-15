@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from fibra.equipamentos_de_fibra import EquipamentoDeFibra, TO, DIO, \
     QuantificacaoDeEquipamentosDeFibra
 
@@ -5,7 +7,13 @@ from fibra.equipamentos_de_fibra import EquipamentoDeFibra, TO, DIO, \
 class SET:
     def __init__(self, andar: int, disciplinas_por_backbones: list[int]):
         self.andar = andar
-        self.equipamentos_de_fibra: list[EquipamentoDeFibra] = [
+        self.equipamentos_de_fibra: list[EquipamentoDeFibra] = (
+            self._instanciar_equipamentos_por_backbone(disciplinas_por_backbones))
+
+    def _instanciar_equipamentos_por_backbone(
+            self, disciplinas_por_backbones: list[int]
+    ) -> list[EquipamentoDeFibra]:
+        return [
             TO(disciplinas) if disciplinas <= 4 else DIO(disciplinas)
             for disciplinas in disciplinas_por_backbones
         ]
