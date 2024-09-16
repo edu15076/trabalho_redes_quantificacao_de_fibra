@@ -13,45 +13,88 @@
     <form method="post" id="form-quantificacao" class="m-5">
         {% csrf_token %}
         {{ form_config|crispy }}
-    
+
         <div id="seq-primaria-config">
             {{ form_seq_primaria|crispy }}
             <button type="button" id="add-seq-secundaria" class="btn btn-secondary mb-1">Adicionar SEQSecundaria</button>
         </div>
-    
+
         <div id="seq-secundaria-configs" class="ms-4">
             <!-- This will be populated dynamically using JavaScript -->
         </div>
-    
+
         <button type="submit" class="btn btn-primary mb-1">Enviar</button>
     </form>
-    
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         // JavaScript code to dynamically add SEQSecundaria and SET forms
         $('#add-seq-secundaria').click(function() {
             // Add a new SEQSecundaria form
-            let seqSecundariaForm = `<div class="seq-secundaria-config">{{ form_seq_secundaria|crispy }}<button type="button" class="btn btn-secondary mb-1 add-set">Adicionar SET</button></div>`;
+            let seqSecundariaForm = `<div class="seq-secundaria-config">{% crispy form_seq_secundaria %}<button type="button" class="btn btn-secondary mb-1 add-set">Adicionar SET</button></div>`;
             $('#seq-secundaria-configs').append(seqSecundariaForm);
         });
 
         $('#seq-secundaria-configs').on('click', '.add-set', function() {
             // Add a new SET form
-            let setForm = `<div class="ms-4">{{ form_set|crispy }}<button type="button" class="btn btn-secondary mb-1 add-backbone">Adicionar Backbone</button></div>`;
+            let setForm = `<div class="ms-4 set-config">{% crispy form_set %}<button type="button" class="btn btn-secondary mb-1 add-backbone">Adicionar Backbone</button></div>`;
             $(this).closest('.seq-secundaria-config').append(setForm);
         });
 
         $('#seq-secundaria-configs').on('click', '.add-backbone', function() {
             // Add a new backbone form
-            let backboneForm = `<div><input type="number" name="disciplinas_backbone" required><label>Disciplinas do Backbone</label></div>`;
+            let backboneForm = `<div><input type="number" name="disciplinas_backbone" class="disciplina_set" required><label>Disciplinas do Backbone</label></div>`;
             $(this).parent().append(backboneForm);
         });
-        
+
         $('#form-quantificacao').submit(function (event) {
             event.preventDefault();
+            
+            let seqs_secundarias = [];
+        
+            $('.seq-secundaria-config').each(function (event) {
+                let sets = [];
+                
+                $(this).find('.set-config').each(function (event) {
+                    let disciplinas = [];
+                    
+                    $(this).find('.disciplina_set').each(function (event) {
+                        disciplinas.push($(this).val());
+                    });
+                    
+                    sets.push({
+                        andar: $(this).find('.andar_set').val(),
+                        disciplinas_por_backbone: disciplinas
+                    });
+                });
+                
+                seqs_secundarias.push({
+                    andar: $(this).find('.andar_seq_secundaria').val(),
+                    medida_basica: $(this).find('.medida_basica_seq_secundaria').val(),
+                    disciplinas: $(this).find('.disciplinas_seq_secundaria').val(),
+                    sets: sets
+                });
+            });
+            
             let formData = {
-                form_config: {
+                config: {
                     modo_seq_primaria: $('#id_modo_fibra_seq_primaria').val(),
                     nucleo_seq_primaria: $('#id_nucleo_fibra_seq_primaria').val(),
                     indice_seq_primaria: $('#id_indice_fibra_seq_primaria').val(),
@@ -64,55 +107,26 @@
                     nucleo_set: $('#id_nucleo_fibra_set').val(),
                     indice_set: $('#id_indice_fibra_set').val(),
                     categoria_set: $('#id_categoria_fibra_set').val(),
-                    backbone_primario: $('#id_backbone_primario').val(),
-                    backbone_secundario: $('#id_backbone_secundario').val()
+                    backbone_primario: $('#id_backbone_primario').is(':checked'),
+                    backbone_secundario: $('#id_backbone_secundario').is(':checked')
                 },
-                form_seq_primaria: {
+                seq_primaria: {
                     medida_basica: $('#id_medida_basica_seq_primaria').val(),
                     disciplinas: $('#id_disciplinas_seq_primaria').val()
                 },
-                form_seqs_secundarias: [
-                    {
-                        andar: 0,
-                        medida_basica: 0,
-                        disciplinas: 0,
-                        sets: [
-                            {
-                                andar: 0,
-                                disciplinas_por_backbone: [0, 1, 4, 2]
-                            },
-                            {
-                                andar: 0,
-                                disciplinas_por_backbone: [0, 1, 4, 2]
-                            }
-                        ]
-                    },
-                    {
-                        andar: 0,
-                        medida_basica: 0,
-                        disciplinas: 0,
-                        sets: [
-                            {
-                                andar: 0,
-                                disciplinas_por_backbone: [0, 1, 4, 2]
-                            },
-                            {
-                                andar: 0,
-                                disciplinas_por_backbone: [0, 1, 4, 2]
-                            }
-                        ]
-                    }
-                ]
+                seqs_secundarias: seqs_secundarias
             };
-        
+
             $.ajax({
                 type: 'POST',
                 url: '{% url "quantificacao_form" %}',
                 data: JSON.stringify(formData),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(data) {
-                    console.log(data.message);
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                success: function(request) {
+                    console.log(request.message);
                 }
             });
         });

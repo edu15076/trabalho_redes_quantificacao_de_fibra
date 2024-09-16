@@ -1,7 +1,6 @@
 from django import forms
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Field
-from crispy_bootstrap5.bootstrap5 import FloatingField
+from crispy_forms.layout import Layout, Field
 
 
 class FormConfig(forms.Form):
@@ -37,7 +36,7 @@ class FormSEQSecundaria(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = False
         self.helper.layout = Layout(
             Field('andar', css_class='andar_seq_secundaria'),
             Field('medida_basica_seq_secundaria', css_class='medida_basica_seq_secundaria'),
@@ -51,7 +50,7 @@ class FormSET(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.form_tag = False
         self.helper.layout = Layout(
             Field('andar', css_class='andar_set'),
         )
-
