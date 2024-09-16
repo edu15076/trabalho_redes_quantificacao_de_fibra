@@ -4,13 +4,13 @@ import math
 
 @dataclass
 class QuantificacaoDeEquipamentosDeFibra:
-    dios: int
-    caixas_de_emenda: int
-    acopladores_lc_duplo: int
-    cordao_optico: int
-    pig_tails_simples: int
-    pig_tails_duplos: int
-    terminadores_opticos: int
+    dios: int = 0
+    caixas_de_emenda: int = 0
+    acopladores_lc_duplo: int = 0
+    cordao_optico: int = 0
+    pig_tails_simples: int = 0
+    pig_tails_duplos: int = 0
+    terminadores_opticos: int = 0
 
     @classmethod
     def get_zero(cls):

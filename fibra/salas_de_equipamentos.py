@@ -1,5 +1,5 @@
-from fibra.equipamentos_de_fibra import QuantificacaoDeEquipamentosDeFibra, DIO
-from fibra.sala_de_telecomunicacoes import SET
+from .equipamentos_de_fibra import QuantificacaoDeEquipamentosDeFibra, DIO
+from .sala_de_telecomunicacoes import SET
 
 
 class SEQSecundaria:
@@ -37,8 +37,8 @@ class SEQSecundaria:
         quantificacao = QuantificacaoDeEquipamentosDeFibra.get_zero()
         for sala in self.sets:
             quantificacao += sala.quantificacao_de_equipamentos_de_fibra
-        # o dio interno aparece aqui por usar as mesmas características de fibra das sets
-        return quantificacao + self.dio_interno.quantificacao_de_equipamentos
+        # o dio interno aparece aqui por usar as mesmas caracterÃ­sticas de fibra das sets
+        return quantificacao + self.dio_interno.quantificacao_de_equipamentos + QuantificacaoDeEquipamentosDeFibra(cordao_optico=self.dio_externo._quantidade_de_cordoes_optico)
 
     @property
     def quantificacao_equipamentos_de_fibra_seq(
@@ -79,7 +79,7 @@ class SEQPrimaria:
         return sum(
             (seq.quantificacao_equipamentos_de_fibra_seq for seq in self.seqs_secundaria),
             QuantificacaoDeEquipamentosDeFibra.get_zero()
-        ) + self.dio_interno.quantificacao_de_equipamentos
+        ) + self.dio_interno.quantificacao_de_equipamentos + QuantificacaoDeEquipamentosDeFibra(cordao_optico=self.dio_externo._quantidade_de_cordoes_optico)
 
     @property
     def quantificacao_equipamentos_de_fibra_sets(self) -> QuantificacaoDeEquipamentosDeFibra:
@@ -99,15 +99,3 @@ class SEQPrimaria:
     @property
     def _quantidade_total_de_pares_de_fibra_seqs_secundarias(self) -> int:
         return sum(sala.disciplinas for sala in self.seqs_secundaria)
-
-
-if __name__ == '__main__':
-    sala_telecom1 = SET(2, [4])
-    sala_telecom2 = SET(3, [4])
-    sala_telecom3 = SET(4, [4])
-
-    sala_equipamento1 = SEQSecundaria(4, 1, 5,
-                                      [sala_telecom1, sala_telecom2, sala_telecom3])
-
-    print(sala_equipamento1.quantificacao_equipamentos_de_fibra_sets)
-    print(sala_equipamento1.quantificacao_equipamentos_de_fibra_seq)

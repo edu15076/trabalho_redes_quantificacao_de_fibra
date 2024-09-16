@@ -1,8 +1,12 @@
-from equipamentos_de_fibra import QuantificacaoDeEquipamentosDeFibra, DIO
-from sala_de_telecomunicacoes import SET
-from salas_de_equipamentos import SEQPrimaria, SEQSecundaria
+import os
+
+import pandas
+
+from .sala_de_telecomunicacoes import SET
+from .salas_de_equipamentos import SEQPrimaria, SEQSecundaria
 from dataclasses import dataclass
 import pandas as pd
+import tempfile
 
 
 @dataclass
@@ -22,13 +26,12 @@ class CleanedInput:
     backbone_primario: bool = False
     backbone_secundario: bool = False
 
-def dictsToXlsx(outer_dict: dict[str, dict]):
-    
+
+def dicts_to_xlsx(outer_dict: dict[str, dict]) -> bytes:
     quantification = pd.DataFrame()
     start = 0
 
     for inner_dict_str in outer_dict:
-        
         inner_dict_keys = []
         inner_dict_values = []
 
@@ -45,38 +48,26 @@ def dictsToXlsx(outer_dict: dict[str, dict]):
         quantification.insert(start+1, f'{inner_dict_str} - Quantidade', pd.concat([pd.Series(inner_dict_values), space], ignore_index=True), allow_duplicates = True)
         quantification.insert(start+2, ' ', space_full, allow_duplicates = True)
 
-        start+=3
+        start += 3
 
-    quantification.to_excel('tabela_quantificacao.xlsx', index=False)
+    return get_xls(quantification)
 
-def get_xls(conteudo: list[dict[str, any]]) -> bytes:
-    """
-    :param conteudo: dicionário com o conteudo da tabela.
-    :rtype: bytes
-    :return: o conteúdo em bytes do arquivo xlsx.
-    """
 
-    import tempfile
-    import pandas as pd
+def get_xls(df: pandas.DataFrame) -> bytes:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_path = os.path.join(temp_dir, 'quantificacao.xlsx')
+        df.to_excel(file_path, index=False)
+        with open(file_path, 'rb') as f:
+            return f.read()
 
-    with tempfile.NamedTemporaryFile(prefix="planilha", suffix=".xlsx", delete=True) as planilha:
-        tabela = pd.DataFrame(conteudo)
-        tabela.to_excel(planilha.name, index=False, sheet_name='Planilha1')
-        planilha.seek(0)
-        conteudo_planilha = planilha.read()
-
-    return conteudo_planilha
 
 def _calcular_quantificacao_total_projeto_simples(entrada):
     sala_equipamento = entrada.seq.quantificacao_equipamentos_de_fibra_seq
     sets = entrada.seq.quantificacao_equipamentos_de_fibra_sets
-    quantificacao_total = {}
-    quantificacao_total[
-        "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19"] = sala_equipamento.dios + sets.dios
-    quantificacao_total[
-        "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)"] = sala_equipamento.caixas_de_emenda + sets.caixas_de_emenda
-    quantificacao_total[
-        "Terminador Optico para 8 fibras"] = sala_equipamento.terminadores_opticos + sets.terminadores_opticos
+    quantificacao_total = {
+        "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19": sala_equipamento.dios + sets.dios,
+        "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)": sala_equipamento.caixas_de_emenda + sets.caixas_de_emenda,
+        "Terminador Optico para 8 fibras": sala_equipamento.terminadores_opticos + sets.terminadores_opticos}
 
     if entrada.caracteristicas_set.nucleo == entrada.caracteristicas_seq_secundaria.nucleo:
         quantificacao_total[
@@ -123,7 +114,6 @@ def _calcular_quantificacao_projeto(
         entrada: CleanedInput
 ) -> dict[str, dict[str, str]]:
     quantificacao_fibra = {}
-    print(entrada.backbone_primario)
     if entrada.backbone_primario:
         seqp = entrada.seq.quantificacao_equipamentos_de_fibra_seq_primaria
         seqs = entrada.seq.quantificacao_equipamentos_de_fibra_seqs_secundarias
@@ -145,17 +135,18 @@ if __name__ == "__main__":
     sala_telecom2 = SET(3, [4])
     sala_telecom3 = SET(4, [4])
 
-    sala_equipamento1 = SEQSecundaria(12, 1, 5,
+    sala_equipamento1 = SEQSecundaria(4, 1, 5,
                                       [sala_telecom1, sala_telecom2, sala_telecom3])
     sala_equipamento2 = SEQSecundaria(12, 1, 5,
                                       [sala_telecom1, sala_telecom2, sala_telecom3])
 
     sala_equipamento_mestre = SEQPrimaria(12, 5, [sala_equipamento1, sala_equipamento2])
 
-    input = CleanedInput(sala_equipamento1, carac_fibra3, carac_fibra3, False, False)
+    input = CleanedInput(sala_equipamento1, carac_fibra3, carac_fibra2, carac_fibra3,
+                         False, True)
     # input = CleanedInput(sala_equipamento_mestre, carac_fibra3, carac_fibra2,  None, True)
 
     dicionario = _calcular_quantificacao_projeto(input)
     for i in dicionario['Quantificacao total']:
-        if dicionario['Quantificacao total'][i] != 0:
+        if not dicionario['Quantificacao total'][i]:
             print(f"{i} : {dicionario['Quantificacao total'][i]}")

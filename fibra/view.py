@@ -1,3 +1,5 @@
+from ast import parse
+
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.views.generic import View
@@ -6,7 +8,7 @@ import json
 
 from .sala_de_telecomunicacoes import SET
 from .salas_de_equipamentos import SEQPrimaria, SEQSecundaria
-from .quantificadores import CleanedInput, CaracteristicasFibra
+from .quantificadores import CleanedInput, CaracteristicasFibra, dicts_to_xlsx
 
 
 class InputParser:
@@ -107,12 +109,28 @@ class QuantificacaoView(View):
     def post(self, request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             data = json.load(request)
-            print(data)
             parsed_data = InputParser(data).parse()
             print(parsed_data)
-            # Process the JSON data
-            # ...
-            return JsonResponse({'message': 'Data saved successfully!'})
+
+            dict_test = {
+                'Quantificação total': {
+                    'Fibra FOMMIG 125/50um': '34 m',
+                    'Fibra penis': '30 cm'
+                },
+                'Quantificação SEQs secundarias': {
+                    'Fibra FOMMIG 125/50um': '13 m',
+                    'Fibra aaaa': '1000 m',
+                    'Fibra bbb': '0 m'
+                }
+            }
+
+            quantificacao_excel_bytes = dicts_to_xlsx(dict_test)
+
+            response = HttpResponse(quantificacao_excel_bytes,
+                                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename="quantificacao.xlsx"'
+
+            return response
         else:
             form_config = FormConfig(request.POST)
             if form_config.is_valid():

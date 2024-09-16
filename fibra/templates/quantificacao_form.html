@@ -125,8 +125,15 @@
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRFToken": getCookie("csrftoken"),
                 },
-                success: function(request) {
-                    console.log(request.message);
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(response) {
+                    let blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    let link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = 'quantificacao.xlsx';
+                    link.click();
                 }
             });
         });
