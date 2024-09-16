@@ -99,3 +99,15 @@ class SEQPrimaria:
     @property
     def _quantidade_total_de_pares_de_fibra_seqs_secundarias(self) -> int:
         return sum(sala.disciplinas for sala in self.seqs_secundaria)
+
+
+if __name__ == '__main__':
+    sala_telecom1 = SET(2, [4])
+    sala_telecom2 = SET(3, [4])
+    sala_telecom3 = SET(4, [4])
+
+    sala_equipamento1 = SEQSecundaria(4, 1, 5,
+                                      [sala_telecom1, sala_telecom2, sala_telecom3])
+
+    print(sala_equipamento1.quantificacao_equipamentos_de_fibra_sets)
+    print(sala_equipamento1.quantificacao_equipamentos_de_fibra_seq)

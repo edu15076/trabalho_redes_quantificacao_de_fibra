@@ -3,28 +3,10 @@ from django.shortcuts import render
 from django.views.generic import View
 from .forms_quantificacao import FormConfig, FormSEQPrimaria, FormSEQSecundaria, FormSET
 import json
-from dataclasses import dataclass
 
 from .sala_de_telecomunicacoes import SET
 from .salas_de_equipamentos import SEQPrimaria, SEQSecundaria
-
-
-@dataclass
-class CaracteristicasFibra:
-    modo: str = ''
-    nucleo: str = ''
-    indice: str= ''
-    categoria: str = ''
-
-
-@dataclass
-class CleanedInput:
-    seq: SEQPrimaria | SEQSecundaria
-    caracteristicas_set: CaracteristicasFibra
-    caracteristicas_seq_secundaria: CaracteristicasFibra
-    caracteristicas_seq_primaria: CaracteristicasFibra
-    backbone_primario: bool = False
-    backbone_secundario: bool = False
+from .quantificadores import CleanedInput, CaracteristicasFibra
 
 
 class InputParser:
