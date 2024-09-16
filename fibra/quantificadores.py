@@ -35,6 +35,9 @@ def dicts_to_xlsx(outer_dict: dict[str, dict]) -> bytes:
         inner_dict_keys = []
         inner_dict_values = []
 
+        if outer_dict[inner_dict_str] is None:
+            continue
+
         for key in outer_dict[inner_dict_str].keys():
             inner_dict_keys.append(key)
 
@@ -61,109 +64,69 @@ def get_xls(df: pandas.DataFrame) -> bytes:
             return f.read()
 
 
-def _calcular_quantificacao_total_projeto_simples(entrada):
+def juntar_dicionarios(dict_1, dict_2):
+    dict_concat = dict_1.copy()
+
+    for key, value in dict_2.items():
+        if key in dict_concat:
+            dict_concat[key] += value
+        else:
+            dict_concat[key] = value
+
+    return dict_concat
+
+
+def criar_dicionario(quantificacao, carac_fib):
+    dict_quantificacao = {}
+    value = list(quantificacao.__dict__.values())
+
+    dict_quantificacao[
+        "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19"] = value[0]
+    dict_quantificacao[
+        "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)"] = value[1]
+    dict_quantificacao[
+        "Terminador Optico para 8 fibras"] = value[6]
+    dict_quantificacao[
+        f"Acoplador optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - LC - duplo"] = \
+    value[2]
+    dict_quantificacao[
+        f"Cordao Optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3m - duplo - conector LC"] = \
+    value[3]
+    dict_quantificacao[
+        f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 1,5m - simples - conector LC"] = \
+    value[4]
+    dict_quantificacao[
+        f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3,0m - duplo - conector LC"] = \
+    value[5]
+
+    return dict_quantificacao
+
+
+def _calcular_quantificacao_projeto_simples(entrada) -> list:
     sala_equipamento = entrada.seq.quantificacao_equipamentos_de_fibra_seq
-    sets = entrada.seq.quantificacao_equipamentos_de_fibra_sets
-    quantificacao_total = {}
+    salas_telecom = entrada.seq.quantificacao_equipamentos_de_fibra_sets
 
-    dict_fibras = entrada.seq.quantificacao_backbones_de_segundo_nivel_por_disciplina
-    for fibras in dict_fibras:
-        quantificacao_total[
-            f"Cabo de Fibra Optica {entrada.caracteristicas_set.categoria} FO{entrada.caracteristicas_set.modo}{entrada.caracteristicas_set.indice} {entrada.caracteristicas_set.nucleo} x 125um - com {fibras * 2} fibras"] = \
-        dict_fibras[fibras]
+    dict_seq = criar_dicionario(sala_equipamento,
+                                entrada.caracteristicas_seq_secundaria)
+    dict_sets = criar_dicionario(salas_telecom, entrada.caracteristicas_set)
+    dict_total = juntar_dicionarios(dict_seq, dict_sets)
 
-    quantificacao_total[
-        "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19"] = sala_equipamento.dios + sets.dios
-    quantificacao_total[
-        "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)"] = sala_equipamento.caixas_de_emenda + sets.caixas_de_emenda
-    quantificacao_total[
-        "Terminador Optico para 8 fibras"] = sala_equipamento.terminadores_opticos + sets.terminadores_opticos
-
-    if entrada.caracteristicas_set == entrada.caracteristicas_seq_secundaria:
-        quantificacao_total[
-            f"Acoplador optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - LC - duplo"] = sala_equipamento.acopladores_lc_duplo + sets.acopladores_lc_duplo
-
-        quantificacao_total[
-            f"Cordao Optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3m - duplo - conector LC"] = sala_equipamento.cordao_optico + sets.cordao_optico
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 1,5m - simples - conector LC"] = sala_equipamento.pig_tails_simples + sets.pig_tails_simples
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3,0m - duplo - conector LC"] = sala_equipamento.pig_tails_duplos + sets.pig_tails_duplos
-
-    else:
-        quantificacao_total[
-            f"Acoplador optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - LC - duplo"] = sets.acopladores_lc_duplo
-        quantificacao_total[
-            f"Acoplador optico {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - LC - duplo"] = sala_equipamento.acopladores_lc_duplo
-
-        quantificacao_total[
-            f"Cordao Optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3m - duplo - conector LC"] = sets.cordao_optico
-        quantificacao_total[
-            f"Cordao Optico {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - 3m - duplo - conector LC"] = sala_equipamento.cordao_optico
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 1,5m - simples - conector LC"] = sets.pig_tails_simples
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - 1,5m - simples - conector LC"] = sala_equipamento.pig_tails_simples
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3,0m - duplo - conector LC"] = sets.pig_tails_duplos
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - 3,0m - duplo - conector LC"] = sala_equipamento.pig_tails_duplos
-
-    return quantificacao_total
+    list_result = [dict_total, None, dict_seq, dict_sets]
+    return list_result
 
 
-def _calcular_quantificacao_total_projeto_complexo(entrada):
-    seqp = entrada.seq.quantificacao_equipamentos_de_fibra_seq_primaria
-    seqs = entrada.seq.quantificacao_equipamentos_de_fibra_seqs_secundarias
-    print(seqp)
-    quantificacao_total = {}
+def _calcular_quantificacao_total_projeto_complexo(entrada) -> list:
+    sala_equipamento_primaria = entrada.seq.quantificacao_equipamentos_de_fibra_seq_primaria
+    salas_equipamentos = entrada.seq.quantificacao_equipamentos_de_fibra_seqs_secundarias
 
-    quantificacao_total[
-        "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19"] = seqp.dios + seqs.dios
-    quantificacao_total[
-        "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)"] = seqp.caixas_de_emenda + seqs.caixas_de_emenda
-    quantificacao_total[
-        "Terminador Optico para 8 fibras"] = seqp.terminadores_opticos + seqs.terminadores_opticos
+    dict_seq = criar_dicionario(sala_equipamento_primaria,
+                                entrada.caracteristicas_seq_primaria)
+    dict_seqs = criar_dicionario(salas_equipamentos,
+                                 entrada.caracteristicas_seq_secundaria)
+    dict_total = juntar_dicionarios(dict_seq, dict_seqs)
 
-    if entrada.caracteristicas_set.nucleo == entrada.caracteristicas_seq_secundaria.nucleo:
-        quantificacao_total[
-            f"Acoplador optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - LC - duplo"] = seqp.acopladores_lc_duplo + seqs.acopladores_lc_duplo
-
-        quantificacao_total[
-            f"Cordao Optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3m - duplo - conector LC"] = seqp.cordao_optico + seqs.cordao_optico
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 1,5m - simples - conector LC"] = seqp.pig_tails_simples + seqs.pig_tails_simples
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3,0m - duplo - conector LC"] = seqp.pig_tails_duplos + seqs.pig_tails_duplos
-
-    else:
-        quantificacao_total[
-            f"Acoplador optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - LC - duplo"] = seqs.acopladores_lc_duplo
-        quantificacao_total[
-            f"Acoplador optico {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - LC - duplo"] = seqp.acopladores_lc_duplo
-
-        quantificacao_total[
-            f"Cordao Optico {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3m - duplo - conector LC"] = seqs.cordao_optico
-        quantificacao_total[
-            f"Cordao Optico {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - 3m - duplo - conector LC"] = seqp.cordao_optico
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 1,5m - simples - conector LC"] = seqs.pig_tails_simples
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - 1,5m - simples - conector LC"] = seqp.pig_tails_simples
-
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_set.nucleo} x 125um - {entrada.caracteristicas_set.modo} - 3,0m - duplo - conector LC"] = seqs.pig_tails_duplos
-        quantificacao_total[
-            f"Pig tail {entrada.caracteristicas_seq_secundaria.nucleo} x 125um - {entrada.caracteristicas_seq_secundaria.modo} - 3,0m - duplo - conector LC"] = seqp.pig_tails_duplos
-
-    return quantificacao_total
+    list_result = [dict_total, dict_seq, dict_seqs, None]
+    return list_result
 
 
 def _calcular_quantificacao_projeto(
@@ -171,44 +134,49 @@ def _calcular_quantificacao_projeto(
 ) -> dict[str, dict[str, str]]:
     quantificacao_fibra = {}
     if entrada.backbone_primario:
-        quantificacao_fibra[
-            "Quantificacao total"] = _calcular_quantificacao_total_projeto_complexo(
-            entrada)
+        list_quantificacaoes = _calcular_quantificacao_total_projeto_complexo(entrada)
     else:
-        quantificacao_fibra[
-            "Quantificacao total"] = _calcular_quantificacao_total_projeto_simples(
-            entrada)
+        list_quantificacaoes = _calcular_quantificacao_projeto_simples(entrada)
+
+    quantificacao_fibra["Quantificacao total"] = list_quantificacaoes[0]
+    quantificacao_fibra["Quantificacao SEQ primaria"] = list_quantificacaoes[1]
+    quantificacao_fibra["Quantificacao SEQ secundaria"] = list_quantificacaoes[2]
+    if list_quantificacaoes[3] is not None:
+        quantificacao_fibra["Quantificacao SETs"] = list_quantificacaoes[3]
+    else:
+        quantificacao_fibra["Quantificacao SETs"] = {}
 
     return quantificacao_fibra
 
 
 if __name__ == "__main__":
-    carac_fibra1 = CaracteristicasFibra("SM", "9", "IG", "Loose")
-    carac_fibra2 = CaracteristicasFibra("SM", "9", "ID", "Loose")
-    carac_fibra3 = CaracteristicasFibra("MM", "50", "ID", "Loose")
-    sala_telecom1 = SET(2, [4, 2])
-    sala_telecom2 = SET(3, [4, 2])
-    sala_telecom3 = SET(4, [4, 2])
+
+    carac_fibra1 = CaracteristicasFibra("SM", "9", "ID", "Tight Buffer")
+    carac_fibra2 = CaracteristicasFibra("MM", "50", "IG", "Loose")
+
+    sala_telecom1 = SET(2, [4])
+    sala_telecom2 = SET(3, [4])
+    sala_telecom3 = SET(4, [4])
 
     sala_equipamento1 = SEQSecundaria(4, 1, 5,
                                       [sala_telecom1, sala_telecom2, sala_telecom3])
     sala_equipamento2 = SEQSecundaria(4, 1, 5,
                                       [sala_telecom1, sala_telecom2, sala_telecom3])
-    sala_equipamento3 = SEQSecundaria(4, 1, 5,
-                                      [sala_telecom1, sala_telecom2, sala_telecom3])
-    sala_equipamento4 = SEQSecundaria(4, 1, 5,
-                                      [sala_telecom1, sala_telecom2, sala_telecom3])
 
     sala_equipamento_mestre = SEQPrimaria(8, 5, [sala_equipamento1, sala_equipamento2])
 
-    input = CleanedInput(sala_equipamento1, carac_fibra3, carac_fibra2, carac_fibra3,
-                         False, True)
+    # input = CleanedInput(sala_equipamento1, carac_fibra2, carac_fibra1, None, False, True)
 
-    # input = CleanedInput(sala_equipamento_mestre, carac_fibra3, carac_fibra2,  None, True)
-    # print(sala_equipamento_mestre.quantificacao_equipamentos_de_fibra_seq_primaria)
-    # print(sala_equipamento_mestre.quantificacao_equipamentos_de_fibra_seqs_secundarias)
+    input = CleanedInput(sala_equipamento_mestre, carac_fibra2, carac_fibra1,
+                         carac_fibra1, True, True)
 
     dicionario = _calcular_quantificacao_projeto(input)
-    for i in dicionario['Quantificacao total']:
-        if dicionario['Quantificacao total'][i] != 0:
-            print(f"{i} : {dicionario['Quantificacao total'][i]}")
+    for key in dicionario.keys():
+        print(
+            "---------------------------------------------------------------------------------------------------------")
+        print(key)
+        print(
+            "---------------------------------------------------------------------------------------------------------")
+        for i in dicionario[key]:
+            if dicionario[key][i] != 0:
+                print(f"{i} : {dicionario[key][i]}")

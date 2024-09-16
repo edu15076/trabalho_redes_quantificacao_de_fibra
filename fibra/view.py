@@ -1,6 +1,6 @@
 from ast import parse
 
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.generic import View
 from .forms_quantificacao import FormConfig, FormSEQPrimaria, FormSEQSecundaria, FormSET
@@ -8,7 +8,8 @@ import json
 
 from .sala_de_telecomunicacoes import SET
 from .salas_de_equipamentos import SEQPrimaria, SEQSecundaria
-from .quantificadores import CleanedInput, CaracteristicasFibra, dicts_to_xlsx
+from .quantificadores import CleanedInput, CaracteristicasFibra, dicts_to_xlsx, \
+    _calcular_quantificacao_projeto
 
 
 class InputParser:
@@ -110,21 +111,7 @@ class QuantificacaoView(View):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             data = json.load(request)
             parsed_data = InputParser(data).parse()
-            print(parsed_data)
-
-            dict_test = {
-                'Quantificação total': {
-                    'Fibra FOMMIG 125/50um': '34 m',
-                    'Fibra penis': '30 cm'
-                },
-                'Quantificação SEQs secundarias': {
-                    'Fibra FOMMIG 125/50um': '13 m',
-                    'Fibra aaaa': '1000 m',
-                    'Fibra bbb': '0 m'
-                }
-            }
-
-            quantificacao_excel_bytes = dicts_to_xlsx(dict_test)
+            quantificacao_excel_bytes = dicts_to_xlsx(_calcular_quantificacao_projeto(parsed_data))
 
             response = HttpResponse(quantificacao_excel_bytes,
                                     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -132,15 +119,4 @@ class QuantificacaoView(View):
 
             return response
         else:
-            form_config = FormConfig(request.POST)
-            if form_config.is_valid():
-                # Process the data
-                # ...
-                return HttpResponse("Data saved successfully!")
-            else:
-                return render(request, self.template_name, {
-                    'form_config': form_config,
-                    'form_seq_primaria': FormSEQPrimaria(),
-                    'form_seq_secundaria': FormSEQSecundaria(),
-                    'form_set': FormSET(),
-                })
+            return Http404()
