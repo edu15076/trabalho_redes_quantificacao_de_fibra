@@ -2,6 +2,7 @@ from equipamentos_de_fibra import QuantificacaoDeEquipamentosDeFibra, DIO
 from sala_de_telecomunicacoes import SET
 from salas_de_equipamentos import SEQPrimaria, SEQSecundaria
 from dataclasses import dataclass
+import pandas as pd
 
 
 @dataclass
@@ -21,6 +22,50 @@ class CleanedInput:
     backbone_primario: bool = False
     backbone_secundario: bool = False
 
+def dictsToXlsx(outer_dict: dict[str, dict]):
+    
+    quantification = pd.DataFrame()
+    start = 0
+
+    for inner_dict_str in outer_dict:
+        
+        inner_dict_keys = []
+        inner_dict_values = []
+
+        for key in outer_dict[inner_dict_str].keys():
+            inner_dict_keys.append(key)
+
+        for key in outer_dict[inner_dict_str].values():
+            inner_dict_values.append(key)
+
+        space = pd.Series([''] * (1000 - len(inner_dict_keys)))
+        space_full = pd.Series([''] * 1000)
+
+        quantification.insert(start, f'{inner_dict_str} - Material', pd.concat([pd.Series(inner_dict_keys), space], ignore_index=True))
+        quantification.insert(start+1, f'{inner_dict_str} - Quantidade', pd.concat([pd.Series(inner_dict_values), space], ignore_index=True), allow_duplicates = True)
+        quantification.insert(start+2, ' ', space_full, allow_duplicates = True)
+
+        start+=3
+
+    quantification.to_excel('tabela_quantificacao.xlsx', index=False)
+
+def get_xls(conteudo: list[dict[str, any]]) -> bytes:
+    """
+    :param conteudo: dicionário com o conteudo da tabela.
+    :rtype: bytes
+    :return: o conteúdo em bytes do arquivo xlsx.
+    """
+
+    import tempfile
+    import pandas as pd
+
+    with tempfile.NamedTemporaryFile(prefix="planilha", suffix=".xlsx", delete=True) as planilha:
+        tabela = pd.DataFrame(conteudo)
+        tabela.to_excel(planilha.name, index=False, sheet_name='Planilha1')
+        planilha.seek(0)
+        conteudo_planilha = planilha.read()
+
+    return conteudo_planilha
 
 def _calcular_quantificacao_total_projeto_simples(entrada):
     sala_equipamento = entrada.seq.quantificacao_equipamentos_de_fibra_seq
