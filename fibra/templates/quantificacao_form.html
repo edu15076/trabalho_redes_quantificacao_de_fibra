@@ -12,18 +12,42 @@
 <body>
     <form method="post" id="form-quantificacao" class="m-5">
         {% csrf_token %}
-        {{ form_config|crispy }}
+        <h1>Quantificação de material óptico</h1>
+        <div class="card mb-3">
+            <div class="card-body">
+                <p>Alunos: Arthur Leão Teles, Arthur Rodrigues Nepomuceno Milagres e Eduardo Costa de Souza</p>
+                <p>Turma: INF3A</p>
+                <p>Professor: Dr. Adelson de Paula Silva</p>
+                <p>Instituição: CEFET-MG</p>
+            </div>
+        </div>
+        <h2>Descrição da solução</h2>
+        <div class="card mb-3">
+            <div class="card-body">
+                <p class="text-justify">
+                    A resolução apresentada consiste na separação dos equipamentos de fibras em salas de telecom (SETs), salas de equipamentos de prédio ou secundárias (SEQs secundárias) e
+                    sala de equipamento do campus ou primária (SEQ primária). No sentido em que os backbones primários interligam a SEQ primária com as SEQs secundárias e os backbones
+                    secundários a SEQ secundária com as SETs. Dessa forma, no caso de estarmos quantificando somente os backbones principais, teremos várias SEQs secundárias, mas não
+                    precisamos passar a especificação de nenhuma SET, também devemos ter os dados da SEQ princípal. Já ao quantificarmos somente os backbones secundários devemos ter
+                    somente uma SEQ secundária que interligará uma lista de SETs, de forma que atribuímos somente uma SEQ secundária, uma lista de SETs, mas não precisamos especificar
+                    a SEQ princípal. Consideramos, por fim, que cada SET pode ter chegando em si mais de uma fibra e que pode ter uma quantidade de disciplinas, pares de fibra, diferente
+                    das demais.
+                </p>
+            </div>
+        </div>
+        {% crispy form_config %}
+{#        {{ form_config|crispy }}#}
 
         <div id="seq-primaria-config">
             {{ form_seq_primaria|crispy }}
-            <button type="button" id="add-seq-secundaria" class="btn btn-secondary mb-1">Adicionar SEQSecundaria</button>
+            <button type="button" id="add-seq-secundaria" class="btn btn-secondary mb-3">Adicionar SEQ secundária</button>
         </div>
 
         <div id="seq-secundaria-configs" class="ms-4">
             <!-- This will be populated dynamically using JavaScript -->
         </div>
 
-        <button type="submit" class="btn btn-primary mb-1">Enviar</button>
+        <button type="submit" class="btn btn-primary mb-3">Baixar quantificação como xlsx</button>
     </form>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -45,22 +69,18 @@
             return cookieValue;
         }
 
-        // JavaScript code to dynamically add SEQSecundaria and SET forms
         $('#add-seq-secundaria').click(function() {
-            // Add a new SEQSecundaria form
-            let seqSecundariaForm = `<div class="seq-secundaria-config">{% crispy form_seq_secundaria %}<button type="button" class="btn btn-secondary mb-1 add-set">Adicionar SET</button></div>`;
+            let seqSecundariaForm = `<div class="seq-secundaria-config">{% crispy form_seq_secundaria %}<button type="button" class="btn btn-secondary mb-3 add-set">Adicionar SET</button></div>`;
             $('#seq-secundaria-configs').append(seqSecundariaForm);
         });
 
         $('#seq-secundaria-configs').on('click', '.add-set', function() {
-            // Add a new SET form
-            let setForm = `<div class="ms-4 set-config">{% crispy form_set %}<button type="button" class="btn btn-secondary mb-1 add-backbone">Adicionar Backbone</button></div>`;
+            let setForm = `<div class="ms-4 set-config">{% crispy form_set %}<button type="button" class="btn btn-secondary mb-3 add-backbone">Adicionar Backbone</button></div>`;
             $(this).closest('.seq-secundaria-config').append(setForm);
         });
 
         $('#seq-secundaria-configs').on('click', '.add-backbone', function() {
-            // Add a new backbone form
-            let backboneForm = `<div><input type="number" name="disciplinas_backbone" class="disciplina_set" required><label>Disciplinas do Backbone</label></div>`;
+            let backboneForm = `<div class="mb-3 ms-4"><input type="number" name="disciplinas_backbone" class="disciplina_set text-input form-control" placeholder="Disciplinas do Backbone chegando à SET" required></div>`;
             $(this).parent().append(backboneForm);
         });
 
