@@ -14,7 +14,7 @@ class QuantificacaoDeEquipamentosDeFibra:
 
     @classmethod
     def get_zero(cls):
-        return QuantificacaoDeEquipamentosDeFibra(0, 0, 0, 0, 0, 0, 0)
+        return QuantificacaoDeEquipamentosDeFibra()
 
     def __add__(
             self, other: 'QuantificacaoDeEquipamentosDeFibra'
