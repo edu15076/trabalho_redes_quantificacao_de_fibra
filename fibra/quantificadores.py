@@ -2,9 +2,10 @@ import os
 
 import pandas
 
+from fibra.equipamentos_de_fibra import QuantificacaoDeEquipamentosDeFibra
 from .sala_de_telecomunicacoes import SET
 from .salas_de_equipamentos import SEQPrimaria, SEQSecundaria
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import pandas as pd
 import tempfile
 
@@ -27,29 +28,105 @@ class CleanedInput:
     backbone_secundario: bool = False
 
 
+class QuantificacaoBlock:
+    def __init__(self, quantificacao: dict[str, int | float] = None) -> None:
+        quantificacao = quantificacao or {}
+        self.quantificacao: dict[str, int | float] = quantificacao
+
+    def clean(self) -> 'QuantificacaoBlock':
+        self.quantificacao = remove_blank(self.quantificacao)
+        return self
+
+    def __add__(self, other: 'QuantificacaoBlock') -> 'QuantificacaoBlock':
+        added = self.quantificacao.copy()
+        for key, value in other.quantificacao.items():
+            if key in added:
+                added[key] += value
+            else:
+                added[key] = value
+        return self.__class__(added)
+
+
+class QuantificacaoEquipamentosBlock(QuantificacaoBlock):
+    def __init__(self, quantificacao: QuantificacaoDeEquipamentosDeFibra | dict[str, int | float] = None,
+                 carac_fib: CaracteristicasFibra = None) -> None:
+        if isinstance(quantificacao, dict):
+            super().__init__(quantificacao)
+            return
+        if carac_fib is None:
+            raise ValueError
+        super().__init__(
+            {
+                "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19": quantificacao.dios,
+                "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)": quantificacao.caixas_de_emenda,
+                "Terminador Optico para 8 fibras": quantificacao.terminadores_opticos,
+                f"Acoplador optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - LC - duplo": quantificacao.acopladores_lc_duplo,
+                f"Cordao Optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3m - duplo - conector LC": quantificacao.cordao_optico,
+                f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 1,5m - simples - conector LC": quantificacao.pig_tails_simples,
+                f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3,0m - duplo - conector LC": quantificacao.pig_tails_duplos
+            }
+        )
+
+
+class QuantificacaoBackboneBlock(QuantificacaoBlock):
+    def __init__(self, carac_fib: CaracteristicasFibra | dict[str, int | float] = None,
+                 fibras: dict[int, float] = None) -> None:
+        if isinstance(carac_fib, dict) or carac_fib is None:
+            super().__init__(carac_fib)
+            return
+        fibras = fibras or {}
+        super().__init__(
+            {
+                f"Cabo de Fibra Optica {carac_fib.categoria} (FO{carac_fib.modo}{carac_fib.indice}) {carac_fib.nucleo} x 125um - com {key * 2} fibras": quantidade
+                for key, quantidade in fibras.items()
+            }
+        )
+
+
+@dataclass
+class Quantificacao:
+    total: QuantificacaoBlock
+    seq_primaria: QuantificacaoBlock = field(default=QuantificacaoBlock())
+    seqs_secundarias: QuantificacaoBlock = field(default=QuantificacaoBlock())
+    sets: QuantificacaoBlock = field(default=QuantificacaoBlock())
+    backbone_primario: QuantificacaoBlock = field(default=QuantificacaoBlock())
+    backbone_secundarios: QuantificacaoBlock = field(default=QuantificacaoBlock())
+
+    def to_dict(self) -> dict[str, dict[str, int | float]]:
+        ret = {
+            "Quantificação total": self.total.quantificacao,
+            "Quantificação SEQ primaria": self.seq_primaria.quantificacao,
+            "Quantificação SEQ(s) secundaria(s)": self.seqs_secundarias.quantificacao,
+            "Quantificação SETs": self.sets.quantificacao,
+            "Quantificação Backbone de primeiro nível": self.backbone_primario.quantificacao,
+            "Quantificação Backbone de secundo nível": self.backbone_secundarios.quantificacao
+        }
+
+        return remove_blank(ret)
+
+
 def dicts_to_xlsx(outer_dict: dict[str, dict]) -> bytes:
     quantification = pd.DataFrame()
     start = 0
 
     for inner_dict_str in outer_dict:
-        inner_dict_keys = []
-        inner_dict_values = []
-
-        if outer_dict[inner_dict_str] is None:
-            continue
-
-        for key in outer_dict[inner_dict_str].keys():
-            inner_dict_keys.append(key)
-
-        for key in outer_dict[inner_dict_str].values():
-            inner_dict_values.append(key)
-
-        space = pd.Series([''] * (1000 - len(inner_dict_keys)))
+        space = pd.Series([''] * (1000 - len(outer_dict[inner_dict_str])))
         space_full = pd.Series([''] * 1000)
 
-        quantification.insert(start, f'{inner_dict_str} - Material', pd.concat([pd.Series(inner_dict_keys), space], ignore_index=True))
-        quantification.insert(start+1, f'{inner_dict_str} - Quantidade', pd.concat([pd.Series(inner_dict_values), space], ignore_index=True), allow_duplicates = True)
-        quantification.insert(start+2, ' ', space_full, allow_duplicates = True)
+        quantification.insert(
+            start,
+            f'{inner_dict_str} - Material',
+            pd.concat([pd.Series(outer_dict[inner_dict_str].keys()), space],
+                      ignore_index=True)
+        )
+        quantification.insert(
+            start + 1,
+            f'{inner_dict_str} - Quantidade',
+            pd.concat([pd.Series(outer_dict[inner_dict_str].values()), space],
+                      ignore_index=True),
+            allow_duplicates=True
+        )
+        quantification.insert(start + 2, ' ', space_full, allow_duplicates=True)
 
         start += 3
 
@@ -64,119 +141,162 @@ def get_xls(df: pandas.DataFrame) -> bytes:
             return f.read()
 
 
-def juntar_dicionarios(dict_1, dict_2):
-    dict_concat = dict_1.copy()
-
-    for key, value in dict_2.items():
-        if key in dict_concat:
-            dict_concat[key] += value
-        else:
-            dict_concat[key] = value
-
-    return dict_concat
+def remove_blank(d: dict) -> dict:
+    keys_to_remove = [key for key, value in d.items() if not value]
+    for key in keys_to_remove:
+        del d[key]
+    return d
 
 
-def criar_dicionario(quantificacao, carac_fib):
-    dict_quantificacao = {}
-    value = list(quantificacao.__dict__.values())
+def _calcular_quantificacao_projeto_simples(clean_input: CleanedInput) -> Quantificacao:
+    seq_secundaria: SEQSecundaria =  clean_input.seq
 
-    dict_quantificacao[
-        "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19"] = value[0]
-    dict_quantificacao[
-        "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)"] = value[1]
-    dict_quantificacao[
-        "Terminador Optico para 8 fibras"] = value[6]
-    dict_quantificacao[
-        f"Acoplador optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - LC - duplo"] = \
-    value[2]
-    dict_quantificacao[
-        f"Cordao Optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3m - duplo - conector LC"] = \
-    value[3]
-    dict_quantificacao[
-        f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 1,5m - simples - conector LC"] = \
-    value[4]
-    dict_quantificacao[
-        f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3,0m - duplo - conector LC"] = \
-    value[5]
+    quantificacao_backboenes_secundarios = QuantificacaoBackboneBlock(
+        clean_input.caracteristicas_set,
+        seq_secundaria.quantificacao_backbones_de_segundo_nivel_por_disciplina
+    ).clean()
 
-    return dict_quantificacao
+    quantificacao_total = (
+        QuantificacaoEquipamentosBlock(
+            seq_secundaria.quantificacao_equipamentos_de_fibra_sets,
+            clean_input.caracteristicas_set
+        ).clean()
+        + QuantificacaoEquipamentosBlock(
+            seq_secundaria.quantificacao_equipamentos_de_fibra_seq,
+            clean_input.caracteristicas_seq_secundaria
+        ).clean()
+        + quantificacao_backboenes_secundarios
+    ).clean()
+
+    quantificacao_sets = QuantificacaoEquipamentosBlock(
+        seq_secundaria.pure_quantificacao_equipamentos_de_fibra_sets,
+        clean_input.caracteristicas_set
+    ).clean()
+
+    quantificacao_seq_secundaria = (
+        QuantificacaoEquipamentosBlock(
+            seq_secundaria.quantificacao_equipamentos_de_fibra_do_tipo_set_na_seq,
+            clean_input.caracteristicas_set
+        ).clean()
+        + QuantificacaoEquipamentosBlock(
+            seq_secundaria.quantificacao_equipamentos_de_fibra_seq,
+            clean_input.caracteristicas_seq_secundaria
+        ).clean()
+    ).clean()
+
+    return Quantificacao(
+        total=quantificacao_total,
+        seqs_secundarias=quantificacao_seq_secundaria,
+        sets=quantificacao_sets,
+        backbone_secundarios=quantificacao_backboenes_secundarios
+    )
 
 
-def _calcular_quantificacao_projeto_simples(entrada) -> list:
-    sala_equipamento = entrada.seq.quantificacao_equipamentos_de_fibra_seq
-    salas_telecom = entrada.seq.quantificacao_equipamentos_de_fibra_sets
+def _calcular_quantificacao_total_projeto_complexo(clean_input: CleanedInput) -> Quantificacao:
+    seq_primaria: SEQPrimaria = clean_input.seq
 
-    dict_seq = criar_dicionario(sala_equipamento,
-                                entrada.caracteristicas_seq_secundaria)
-    dict_sets = criar_dicionario(salas_telecom, entrada.caracteristicas_set)
-    dict_total = juntar_dicionarios(dict_seq, dict_sets)
+    quantificacao_backboenes_primarios = QuantificacaoBackboneBlock(
+        clean_input.caracteristicas_seq_secundaria,
+        seq_primaria.quantificacao_backbones_de_primeiro_nivel_por_disciplina
+    ).clean()
 
-    list_result = [dict_total, None, dict_seq, dict_sets]
-    return list_result
+    quantificacao_backboenes_secundarios = QuantificacaoBackboneBlock(
+        clean_input.caracteristicas_set,
+        seq_primaria.quantificacao_backbones_de_segundo_nivel_por_disciplina
+    ).clean()
 
+    quantificacao_total = (
+        QuantificacaoEquipamentosBlock(
+            seq_primaria.quantificacao_equipamentos_de_fibra_sets,
+            clean_input.caracteristicas_set
+        ).clean()
+        + QuantificacaoEquipamentosBlock(
+            seq_primaria.quantificacao_equipamentos_de_fibra_seqs_secundarias,
+            clean_input.caracteristicas_seq_secundaria
+        ).clean()
+        + QuantificacaoEquipamentosBlock(
+            seq_primaria.quantificacao_equipamentos_de_fibra_seq_primaria,
+            clean_input.caracteristicas_seq_primaria
+        ).clean()
+        + quantificacao_backboenes_primarios
+        + quantificacao_backboenes_secundarios
+    ).clean()
 
-def _calcular_quantificacao_total_projeto_complexo(entrada) -> list:
-    sala_equipamento_primaria = entrada.seq.quantificacao_equipamentos_de_fibra_seq_primaria
-    salas_equipamentos = entrada.seq.quantificacao_equipamentos_de_fibra_seqs_secundarias
+    quantificacao_sets = QuantificacaoEquipamentosBlock(
+        seq_primaria.pure_quantificacao_equipamentos_de_fibra_sets,
+        clean_input.caracteristicas_set
+    ).clean()
 
-    dict_seq = criar_dicionario(sala_equipamento_primaria,
-                                entrada.caracteristicas_seq_primaria)
-    dict_seqs = criar_dicionario(salas_equipamentos,
-                                 entrada.caracteristicas_seq_secundaria)
-    dict_total = juntar_dicionarios(dict_seq, dict_seqs)
+    quantificacao_seqs_secundarias = (
+        QuantificacaoEquipamentosBlock(
+            seq_primaria.pure_quantificacao_equipamentos_de_fibra_seqs_secundarias,
+            clean_input.caracteristicas_seq_secundaria
+        ).clean()
+        + QuantificacaoEquipamentosBlock(
+            seq_primaria.quantificacao_equipamentos_de_fibra_do_tipo_set_seqs_secundarias,
+            clean_input.caracteristicas_set
+        ).clean()
+    ).clean()
 
-    list_result = [dict_total, dict_seq, dict_seqs, None]
-    return list_result
+    quantificacao_seq_primaria = (
+        QuantificacaoEquipamentosBlock(
+            seq_primaria.quantificacao_equipamentos_de_fibra_seq_primaria,
+            clean_input.caracteristicas_seq_primaria
+        ).clean()
+        + QuantificacaoEquipamentosBlock(
+            seq_primaria.quantificacao_equipamentos_de_fibra_do_tipo_seq_secondaria_na_seq_primaria,
+            clean_input.caracteristicas_seq_secundaria
+        ).clean()
+    ).clean()
+
+    return Quantificacao(
+        total=quantificacao_total,
+        seq_primaria=quantificacao_seq_primaria,
+        seqs_secundarias=quantificacao_seqs_secundarias,
+        sets=quantificacao_sets,
+        backbone_primario=quantificacao_backboenes_primarios,
+        backbone_secundarios=quantificacao_backboenes_secundarios
+    )
 
 
 def _calcular_quantificacao_projeto(
-        entrada: CleanedInput
-) -> dict[str, dict[str, str]]:
-    quantificacao_fibra = {}
-    if entrada.backbone_primario:
-        list_quantificacaoes = _calcular_quantificacao_total_projeto_complexo(entrada)
-    else:
-        list_quantificacaoes = _calcular_quantificacao_projeto_simples(entrada)
-
-    quantificacao_fibra["Quantificacao total"] = list_quantificacaoes[0]
-    quantificacao_fibra["Quantificacao SEQ primaria"] = list_quantificacaoes[1]
-    quantificacao_fibra["Quantificacao SEQ secundaria"] = list_quantificacaoes[2]
-    if list_quantificacaoes[3] is not None:
-        quantificacao_fibra["Quantificacao SETs"] = list_quantificacaoes[3]
-    else:
-        quantificacao_fibra["Quantificacao SETs"] = {}
-
-    return quantificacao_fibra
+        clean_input: CleanedInput
+) -> dict[str, dict[str, int | float]]:
+    return (
+        _calcular_quantificacao_total_projeto_complexo(clean_input)
+        if clean_input.backbone_primario else
+        _calcular_quantificacao_projeto_simples(clean_input)
+    ).to_dict()
 
 
 if __name__ == "__main__":
+    def main():
+        carac_fibra1 = CaracteristicasFibra("SM", "9", "ID", "Tight Buffer")
+        carac_fibra2 = CaracteristicasFibra("MM", "50", "IG", "Loose")
 
-    carac_fibra1 = CaracteristicasFibra("SM", "9", "ID", "Tight Buffer")
-    carac_fibra2 = CaracteristicasFibra("MM", "50", "IG", "Loose")
+        sala_telecom1 = SET(2, [4])
+        sala_telecom2 = SET(3, [4])
+        sala_telecom3 = SET(4, [4])
 
-    sala_telecom1 = SET(2, [4])
-    sala_telecom2 = SET(3, [4])
-    sala_telecom3 = SET(4, [4])
+        sala_equipamento1 = SEQSecundaria(4, 1, 5,
+                                          [sala_telecom1, sala_telecom2, sala_telecom3])
+        sala_equipamento2 = SEQSecundaria(4, 1, 5,
+                                          [sala_telecom1, sala_telecom2, sala_telecom3])
 
-    sala_equipamento1 = SEQSecundaria(4, 1, 5,
-                                      [sala_telecom1, sala_telecom2, sala_telecom3])
-    sala_equipamento2 = SEQSecundaria(4, 1, 5,
-                                      [sala_telecom1, sala_telecom2, sala_telecom3])
+        sala_equipamento_mestre = SEQPrimaria(8, 5, [sala_equipamento1, sala_equipamento2])
 
-    sala_equipamento_mestre = SEQPrimaria(8, 5, [sala_equipamento1, sala_equipamento2])
+        # input = CleanedInput(sala_equipamento1, carac_fibra2, carac_fibra1, None, False, True)
 
-    # input = CleanedInput(sala_equipamento1, carac_fibra2, carac_fibra1, None, False, True)
+        input = CleanedInput(sala_equipamento_mestre, carac_fibra2, carac_fibra1,
+                             carac_fibra1, True, True)
 
-    input = CleanedInput(sala_equipamento_mestre, carac_fibra2, carac_fibra1,
-                         carac_fibra1, True, True)
-
-    dicionario = _calcular_quantificacao_projeto(input)
-    for key in dicionario.keys():
-        print(
-            "---------------------------------------------------------------------------------------------------------")
-        print(key)
-        print(
-            "---------------------------------------------------------------------------------------------------------")
-        for i in dicionario[key]:
-            if dicionario[key][i] != 0:
+        dicionario = _calcular_quantificacao_projeto(input)
+        for key in dicionario.keys():
+            print(
+                "---------------------------------------------------------------------------------------------------------")
+            print(key)
+            print(
+                "---------------------------------------------------------------------------------------------------------")
+            for i in dicionario[key]:
                 print(f"{i} : {dicionario[key][i]}")
+    main()

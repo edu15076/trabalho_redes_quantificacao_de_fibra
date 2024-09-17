@@ -44,14 +44,13 @@ class SEQSecundaria:
         )
 
     @property
-    def pure_quantificacao_equipamentos_de_fibra_seq(
-            self) -> QuantificacaoDeEquipamentosDeFibra:
-        """Quantifica os equipamentos de fibra estritamente nessa SEQ secundária"""
-        return (self.dio_externo.quantificacao_de_equipamentos
-                + self.dio_interno.quantificacao_de_equipamentos
-                + QuantificacaoDeEquipamentosDeFibra(
-                    cordao_optico=self.dio_externo._quantidade_de_cordoes_optico)
-                )
+    def quantificacao_equipamentos_de_fibra_do_tipo_set_na_seq(self):
+        return (
+            self.dio_interno.quantificacao_de_equipamentos
+            + QuantificacaoDeEquipamentosDeFibra(
+                cordao_optico=self.dio_externo._quantidade_de_cordoes_optico
+            )
+        )
 
     @property
     def quantificacao_equipamentos_de_fibra_sets(
@@ -59,9 +58,7 @@ class SEQSecundaria:
         """Quantifica os equipamentos de fibra das SETs ou que se ligam as SETs e usam
         fibras de mesmas características"""
         return (self.pure_quantificacao_equipamentos_de_fibra_sets
-                + self.dio_interno.quantificacao_de_equipamentos
-                + QuantificacaoDeEquipamentosDeFibra(
-                    cordao_optico=self.dio_externo._quantidade_de_cordoes_optico)
+                + self.quantificacao_equipamentos_de_fibra_do_tipo_set_na_seq
                 )
 
     @property
@@ -99,9 +96,9 @@ class SEQPrimaria:
         return quantificacao_total
 
     @property
-    def pure_quantificacao_equipamentos_de_fibra_seq_primaria(self) -> QuantificacaoDeEquipamentosDeFibra:
-        return (self.dio_externo.quantificacao_de_equipamentos
-                + self.dio_interno.quantificacao_de_equipamentos
+    def quantificacao_equipamentos_de_fibra_do_tipo_seq_secondaria_na_seq_primaria(
+            self) -> QuantificacaoDeEquipamentosDeFibra:
+        return (self.dio_interno.quantificacao_de_equipamentos
                 + QuantificacaoDeEquipamentosDeFibra(
                     cordao_optico=self.dio_externo._quantidade_de_cordoes_optico)
                 )
@@ -111,25 +108,28 @@ class SEQPrimaria:
         return self.dio_externo.quantificacao_de_equipamentos
 
     @property
-    def pure_quantificacao_equipamentos_de_fibra_seqs_secundarias(
+    def quantificacao_equipamentos_de_fibra_seqs_secundarias(self) -> QuantificacaoDeEquipamentosDeFibra:
+        return (
+            self.pure_quantificacao_equipamentos_de_fibra_seqs_secundarias
+            + self.quantificacao_equipamentos_de_fibra_do_tipo_seq_secondaria_na_seq_primaria
+        )
+
+    @property
+    def quantificacao_equipamentos_de_fibra_do_tipo_set_seqs_secundarias(
             self) -> QuantificacaoDeEquipamentosDeFibra:
         return sum(
-            (seq.pure_quantificacao_equipamentos_de_fibra_seq for seq in
+            (seq.quantificacao_equipamentos_de_fibra_do_tipo_set_na_seq for seq in
              self.seqs_secundaria),
             QuantificacaoDeEquipamentosDeFibra.get_zero()
         )
 
     @property
-    def quantificacao_equipamentos_de_fibra_seqs_secundarias(self) -> QuantificacaoDeEquipamentosDeFibra:
-        return (
-            sum(
-                (seq.quantificacao_equipamentos_de_fibra_seq for seq in
-                 self.seqs_secundaria),
-                QuantificacaoDeEquipamentosDeFibra.get_zero()
-            )
-            + self.dio_interno.quantificacao_de_equipamentos
-            + QuantificacaoDeEquipamentosDeFibra(
-                cordao_optico=self.dio_externo._quantidade_de_cordoes_optico)
+    def pure_quantificacao_equipamentos_de_fibra_seqs_secundarias(
+            self) -> QuantificacaoDeEquipamentosDeFibra:
+        return sum(
+            (seq.quantificacao_equipamentos_de_fibra_seq for seq in
+             self.seqs_secundaria),
+            QuantificacaoDeEquipamentosDeFibra.get_zero()
         )
 
     @property
