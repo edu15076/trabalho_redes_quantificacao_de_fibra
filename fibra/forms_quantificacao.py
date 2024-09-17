@@ -1,7 +1,32 @@
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, HTML
-from django.contrib.admin.utils import help_text_for_field
+
+MODOS_FIBRA = [
+    ('', 'Não selecionado'),
+    ('MM', 'Multimodo'),
+    ('SM', 'Monomodo'),
+]
+
+CATEGORIAS_FIBRA = [
+    ('', 'Não selecionado'),
+    ('Loose', 'Loose Buffer'),
+    ('Tight', 'Tight Buffer'),
+    ('Loose Auto Sustentável', 'Loose Auto Sustentável'),
+]
+
+INDICES_FIBRA = [
+    ('', 'Não selecionado'),
+    ('IG', 'Índice Gradual'),
+    ('ID', 'Índice Degrau'),
+]
+
+NUCLEOS_FIBRA = [
+    ('', 'Não selecionado'),
+    ('9', '9µm'),
+    ('50', '50µm'),
+    ('62.5', '62.5µm'),
+]
 
 
 class FormConfig(forms.Form):
@@ -16,32 +41,64 @@ class FormConfig(forms.Form):
         help_text='Implica em quantificar SEQ secundária e SETs'
     )
 
-    modo_fibra_seq_primaria = forms.CharField(label="Modo da Fibra na SEQ primária", required=False,
-                                              help_text="SM ou MM")
-    nucleo_fibra_seq_primaria = forms.CharField(label="Núcleo da Fibra na SEQ primária", required=False,
-                                                help_text="Valor inteiro, 9, 50, ...")
-    indice_fibra_seq_primaria = forms.CharField(label="Índice da Fibra na SEQ primária", required=False,
-                                                help_text="IG, ID, ...")
-    categoria_fibra_seq_primaria = forms.CharField(label="Categoria da Fibra na SEQ primária", required=False,
-                                                   help_text='Loose, tight buffer, ...')
+    modo_fibra_seq_primaria = forms.ChoiceField(
+        label="Modo da Fibra na SEQ primária",
+        choices=MODOS_FIBRA,
+        required=False
+    )
+    nucleo_fibra_seq_primaria = forms.ChoiceField(
+        label="Núcleo da Fibra na SEQ primária",
+        choices=NUCLEOS_FIBRA,
+        required=False
+    )
+    indice_fibra_seq_primaria = forms.ChoiceField(
+        label="Índice da Fibra na SEQ primária",
+        choices=INDICES_FIBRA,
+        required=False
+    )
+    categoria_fibra_seq_primaria = forms.ChoiceField(
+        label="Categoria da Fibra na SEQ primária",
+        choices=CATEGORIAS_FIBRA,
+        required=False
+    )
 
-    modo_fibra_seq_secundaria = forms.CharField(label="Modo da Fibra nas SEQs secundárias",
-                                              help_text="SM ou MM")
-    nucleo_fibra_seq_secundaria = forms.CharField(label="Núcleo da Fibra nas SEQs secundárias",
-                                                help_text="Valor inteiro, 9, 50, ...")
-    indice_fibra_seq_secundaria = forms.CharField(label="Índice da Fibra nas SEQs secundárias",
-                                                help_text="IG, ID, ...")
-    categoria_fibra_seq_secundaria = forms.CharField(label="Categoria da Fibra nas SEQs secundárias",
-                                                   help_text='Loose, tight buffer, ...')
+    modo_fibra_seq_secundaria = forms.ChoiceField(
+        label="Modo da Fibra nas SEQs secundárias",
+        choices=MODOS_FIBRA
+    )
+    nucleo_fibra_seq_secundaria = forms.ChoiceField(
+        label="Núcleo da Fibra nas SEQs secundárias",
+        choices=NUCLEOS_FIBRA
+    )
+    indice_fibra_seq_secundaria = forms.ChoiceField(
+        label="Índice da Fibra nas SEQs secundárias",
+        choices=INDICES_FIBRA
+    )
+    categoria_fibra_seq_secundaria = forms.ChoiceField(
+        label="Categoria da Fibra nas SEQs secundárias",
+        choices=CATEGORIAS_FIBRA
+    )
 
-    modo_fibra_set = forms.CharField(label="Modo da Fibra nas SETs", required=False,
-                                              help_text="SM ou MM")
-    nucleo_fibra_set = forms.CharField(label="Núcleo da Fibra nas SETs", required=False,
-                                                help_text="Valor inteiro, 9, 50, ...")
-    indice_fibra_set = forms.CharField(label="Índice da Fibra nas SETs", required=False,
-                                                help_text="IG, ID, ...")
-    categoria_fibra_set = forms.CharField(label="Categoria da Fibra nas SETs", required=False,
-                                                   help_text='Loose, tight buffer, ...')
+    modo_fibra_set = forms.ChoiceField(
+        label="Modo da Fibra nas SETs",
+        choices=MODOS_FIBRA,
+        required=False
+    )
+    nucleo_fibra_set = forms.ChoiceField(
+        label="Núcleo da Fibra nas SETs",
+        choices=NUCLEOS_FIBRA,
+        required=False
+    )
+    indice_fibra_set = forms.ChoiceField(
+        label="Índice da Fibra nas SETs",
+        choices=INDICES_FIBRA,
+        required=False
+    )
+    categoria_fibra_set = forms.ChoiceField(
+        label="Categoria da Fibra nas SETs",
+        choices=CATEGORIAS_FIBRA,
+        required=False
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,8 +139,16 @@ class FormConfig(forms.Form):
 
 
 class FormSEQPrimaria(forms.Form):
-    medida_basica_seq_primaria = forms.FloatField(label="Distância média das SEQs secundárias à SEQ primária", required=False)
-    disciplinas_seq_primaria = forms.IntegerField(label="Disciplinas chegando na SEQ primária", required=False)
+    medida_basica_seq_primaria = forms.FloatField(
+        label="Distância média das SEQs secundárias à SEQ primária",
+        required=False,
+        widget=forms.NumberInput(attrs={'min': '0', 'step': '0.1'})
+    )
+    disciplinas_seq_primaria = forms.IntegerField(
+        label="Disciplinas chegando na SEQ primária",
+        required=False,
+        widget=forms.NumberInput(attrs={'min': '1', 'step': '1'})
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -98,9 +163,17 @@ class FormSEQPrimaria(forms.Form):
 
 
 class FormSEQSecundaria(forms.Form):
-    andar = forms.CharField(label="Andar")
-    medida_basica_seq_secundaria = forms.FloatField(label="Pé direito SEQ secundária")
-    disciplinas_seq_secundaria = forms.IntegerField(label="Disciplinas chegando na SEQ secundária")
+    andar = forms.IntegerField(
+        label="Andar"
+    )
+    medida_basica_seq_secundaria = forms.FloatField(
+        label="Pé direito SEQ secundária",
+        widget=forms.NumberInput(attrs={'min': '0', 'step': '0.1'})
+    )
+    disciplinas_seq_secundaria = forms.IntegerField(
+        label="Disciplinas chegando na SEQ secundária",
+        widget=forms.NumberInput(attrs={'min': '1', 'step': '1'})
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -117,7 +190,7 @@ class FormSEQSecundaria(forms.Form):
 
 
 class FormSET(forms.Form):
-    andar = forms.CharField(label="Andar")
+    andar = forms.IntegerField(label="Andar")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

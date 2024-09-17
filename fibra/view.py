@@ -30,7 +30,7 @@ class InputParser:
             if self._backbone_secundario else None
         )
         return SEQSecundaria(
-            int(seq_data['disciplinas']), int(seq_data['andar']), int(seq_data['medida_basica']), sets
+            int(seq_data['disciplinas']), int(seq_data['andar']), float(seq_data['medida_basica']), sets
         )
 
     def _parse_seq_primaria(self) -> SEQPrimaria:
@@ -39,7 +39,7 @@ class InputParser:
             self._parse_seq_secundaria(seq) for seq in self.data['seqs_secundarias']
         ]
         return SEQPrimaria(
-            int(seq_data['disciplinas']), int(seq_data['medida_basica']), seqs_secundarias
+            int(seq_data['disciplinas']), float(seq_data['medida_basica']), seqs_secundarias
         )
 
     def _parse_caracteristicas(self) -> tuple:
