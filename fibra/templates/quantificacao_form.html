@@ -143,11 +143,14 @@
                     responseType: 'blob'
                 },
                 success: function(response) {
-                    let blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    let blob = new Blob([response], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
                     let link = document.createElement('a');
                     link.href = window.URL.createObjectURL(blob);
                     link.download = 'quantificacao.xlsx';
                     link.click();
+                },
+                error: function (response) {
+                    alert('Houve um erro ao baixar o xlsx. Se você tentou quantificar somente o backbone secundário, por favor informe uma SEQ secundária.');
                 }
             });
         });

@@ -60,10 +60,10 @@ class QuantificacaoEquipamentosBlock(QuantificacaoBlock):
                 "Chassi DIO (Distribuido Interno Optico) com 24 portas - 1U - 19": quantificacao.dios,
                 "Bandeja para emenda de fibra no DIO - (comporta ate 12 emendas)": quantificacao.caixas_de_emenda,
                 "Terminador Optico para 8 fibras": quantificacao.terminadores_opticos,
-                f"Acoplador optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - LC - duplo": quantificacao.acopladores_lc_duplo,
-                f"Cordao Optico {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3m - duplo - conector LC": quantificacao.cordao_optico,
-                f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 1,5m - simples - conector LC": quantificacao.pig_tails_simples,
-                f"Pig tail {carac_fib.nucleo} x 125um - {carac_fib.modo} - 3,0m - duplo - conector LC": quantificacao.pig_tails_duplos
+                f"Acoplador optico {carac_fib.nucleo} x 125µm - {carac_fib.modo} - LC - duplo": quantificacao.acopladores_lc_duplo,
+                f"Cordao Optico {carac_fib.nucleo} x 125µm - {carac_fib.modo} - 3m - duplo - conector LC": quantificacao.cordao_optico,
+                f"Pig tail {carac_fib.nucleo} x 125µm - {carac_fib.modo} - 1,5m - simples - conector LC": quantificacao.pig_tails_simples,
+                f"Pig tail {carac_fib.nucleo} x 125µm - {carac_fib.modo} - 3,0m - duplo - conector LC": quantificacao.pig_tails_duplos
             }
         )
 
@@ -77,7 +77,7 @@ class QuantificacaoBackboneBlock(QuantificacaoBlock):
         fibras = fibras or {}
         super().__init__(
             {
-                f"Cabo de Fibra Optica {carac_fib.categoria} (FO{carac_fib.modo}{carac_fib.indice}) {carac_fib.nucleo} x 125um - com {key * 2} fibras": quantidade
+                f"Cabo de Fibra Optica {carac_fib.categoria} (FO{carac_fib.modo}{carac_fib.indice}) {carac_fib.nucleo} x 125µm - com {key * 2} fibras": quantidade
                 for key, quantidade in fibras.items()
             }
         )
