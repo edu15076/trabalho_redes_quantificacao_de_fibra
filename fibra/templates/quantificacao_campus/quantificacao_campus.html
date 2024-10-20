@@ -1,0 +1,11 @@
+{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
+
+
+<div id="campus-quantificacao">
+    {% crispy form_config_campus_interface %}
+    <h2>Configuração da SEQ do campus</h2>
+    {% crispy form_seq_primaria %}
+    <button type="button" class="add-seq btn btn-secondary mb-3">Adicionar SEQ secundária</button>
+    <div class="ms-4 list-seqs"></div>
+</div>

@@ -1,0 +1,10 @@
+{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
+
+
+<div class="set-config container-set">
+    {% crispy form_set %}
+    <button type="button" class="btn btn-secondary mb-3 add-backbone">Adicionar Backbone</button>
+    <button type="button" class="ms-2 mb-3 w-fit btn add-backbone remove-parent btn-outline-danger"><span aria-hidden="true">&times;</span> Remover SET</button>
+    <div class="ms-4 list-backbones"></div>
+</div>
