@@ -31,7 +31,7 @@
         <div class="card mb-3">
             <div class="card-body">
                 <p class="text-justify">
-                    A resolução apresentada consiste na separação dos equipamentos de fibras em salas de telecom (SETs), salas de equipamentos de prédio ou secundárias (SEQs secundárias) e sala de equipamento do campus ou primária (SEQ primária). No sentido em que os backbones primários interligam a SEQ primária com as SEQs secundárias e os backbones secundários a SEQ secundária com as SETs. Dessa forma, no caso de estarmos quantificando somente os backbones principais, teremos várias SEQs secundárias, mas não precisamos passar a especificação de nenhuma SET, também devemos ter os dados da SEQ principal. Já ao quantificarmos somente os backbones secundários devemos ter somente uma SEQ secundária que interligará uma lista de SETs, de forma que atribuímos somente uma SEQ secundária, uma lista de SETs, mas não precisamos especificar a SEQ principal. Consideramos, por fim, que cada SET pode ter chegando em si mais de uma fibra e que pode ter uma quantidade de disciplinas, pares de fibra, diferente das demais.
+                    A resolução apresentada consiste na separação da quantificação por campus e prédio. A quantificação de prédio quantifica somente um prédio, pontanto a SEQ principal é a do prédio e devem ser especificadas todas as SETs nesse prédio, notque que podem chegar várias fibras em uma SET com quantidades diferentes de disciplinas. Já a quantificação de campus considera a SEQ do campus como sendo principal e as SEQs secundárias as dos prédios, que são detalhados da mesma forma que a anterior.
                 </p>
             </div>
         </div>
