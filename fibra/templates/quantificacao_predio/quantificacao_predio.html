@@ -1,0 +1,9 @@
+{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
+
+
+<div id="predio-quantificacao">
+    {% crispy form_config_predio_interface %}
+    <h2>Configuração SEQ do prédio</h2>
+    {% include 'quantificacao_predio/quantificacao_seq_predio.html' with form_seq_predio=form_seq_secundaria %}
+</div>

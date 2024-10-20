@@ -92,17 +92,34 @@ class Quantificacao:
     backbone_primario: QuantificacaoBlock = field(default=QuantificacaoBlock())
     backbone_secundarios: QuantificacaoBlock = field(default=QuantificacaoBlock())
 
-    def to_dict(self) -> dict[str, dict[str, int | float]]:
-        ret = {
-            "Quantificação total": self.total.quantificacao,
-            "Quantificação SEQ primaria": self.seq_primaria.quantificacao,
-            "Quantificação SEQ(s) secundaria(s)": self.seqs_secundarias.quantificacao,
-            "Quantificação SETs": self.sets.quantificacao,
-            "Quantificação Backbone de primeiro nível": self.backbone_primario.quantificacao,
-            "Quantificação Backbone de secundo nível": self.backbone_secundarios.quantificacao
+    @property
+    def _name_to_attr(self) -> dict[str, str]:
+        return {
+            "Quantificação total": 'total',
+            "Quantificação SEQ primaria": 'seq_primaria',
+            "Quantificação SEQ(s) secundaria(s)": 'seqs_secundarias',
+            "Quantificação SETs": 'sets',
+            "Quantificação Backbone de primeiro nível": 'backbone_primario',
+            "Quantificação Backbone de secundo nível": 'backbone_secundarios'
         }
 
-        return remove_blank(ret)
+    def to_dict(self) -> dict[str, dict[str, int | float]]:
+        print(self.backbone_primario.quantificacao)
+        return remove_blank(
+            {
+                "Quantificação total": self.total.quantificacao,
+                "Quantificação SEQ primaria": self.seqs_secundarias.quantificacao,
+                "Quantificação SETs": self.sets.quantificacao,
+                "Quantificação Backbone de primeiro nível": self.backbone_secundarios.quantificacao
+            } if not self.backbone_primario.quantificacao and not self.seq_primaria.quantificacao else {
+                "Quantificação total": self.total.quantificacao,
+                "Quantificação SEQ primaria": self.seq_primaria.quantificacao,
+                "Quantificação SEQ(s) secundaria(s)": self.seqs_secundarias.quantificacao,
+                "Quantificação SETs": self.sets.quantificacao,
+                "Quantificação Backbone de primeiro nível": self.backbone_primario.quantificacao,
+                "Quantificação Backbone de secundo nível": self.backbone_secundarios.quantificacao
+            }
+        )
 
 
 def dicts_to_xlsx(outer_dict: dict[str, dict]) -> bytes:

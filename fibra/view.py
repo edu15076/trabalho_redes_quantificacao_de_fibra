@@ -3,7 +3,8 @@ from ast import parse
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.generic import View
-from .forms_quantificacao import FormConfig, FormSEQPrimaria, FormSEQSecundaria, FormSET
+from .forms_quantificacao import FormSEQPrimaria, FormSEQSecundaria, \
+    FormSET, FormChoicesInterface, FormConfigCampusInterface, FormConfigPredioInterface
 import json
 
 from .sala_de_telecomunicacoes import SET
@@ -96,12 +97,16 @@ class QuantificacaoView(View):
     template_name = 'quantificacao_form.html'
 
     def get(self, request):
-        form_config = FormConfig()
+        form_choices_interface = FormChoicesInterface()
+        form_config_campus_interface = FormConfigCampusInterface()
+        form_config_predio_interface = FormConfigPredioInterface()
         form_seq_primaria = FormSEQPrimaria()
         form_seq_secundaria = FormSEQSecundaria()
         form_set = FormSET()
         return render(request, self.template_name, {
-            'form_config': form_config,
+            'form_choices_interface': form_choices_interface,
+            'form_config_campus_interface': form_config_campus_interface,
+            'form_config_predio_interface': form_config_predio_interface,
             'form_seq_primaria': form_seq_primaria,
             'form_seq_secundaria': form_seq_secundaria,
             'form_set': form_set,
