@@ -2,37 +2,12 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, HTML
 
-MODOS_FIBRA = [
-    ('', 'Não selecionado'),
-    ('MM', 'Multimodo'),
-    ('SM', 'Monomodo'),
-]
-
-CATEGORIAS_FIBRA = [
-    ('', 'Não selecionado'),
-    ('Loose', 'Loose Buffer'),
-    ('Tight', 'Tight Buffer'),
-    ('Loose Auto Sustentável', 'Loose Auto Sustentável'),
-]
-
-INDICES_FIBRA = [
-    ('', 'Não selecionado'),
-    ('IG', 'Índice Gradual'),
-    ('ID', 'Índice Degrau'),
-]
-
-NUCLEOS_FIBRA = [
-    ('', 'Não selecionado'),
-    ('9', '9µm'),
-    ('50', '50µm'),
-    ('62.5', '62.5µm'),
-]
 
 FIBRA_INTERFACE = [
     ('', 'Não selecionado'),
+    ('SM9', 'Monomodo 9µm'),
     ('MM50', 'Multimodo 50µm'),
     ('MM62.5', 'Multimodo 62.5µm'),
-    ('SM9', 'Monomodo 9µm'),
 ]
 
 TIPO_QUANTIFICACAO_INTERFACE = [
