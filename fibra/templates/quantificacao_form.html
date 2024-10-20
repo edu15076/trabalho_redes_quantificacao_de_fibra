@@ -80,25 +80,25 @@
 
         $('#form-quantificacao').submit(function (event) {
             event.preventDefault();
-            
+
             let seqs_secundarias = [];
-        
+
             $('.seq-secundaria-config').each(function (event) {
                 let sets = [];
-                
+
                 $(this).find('.set-config').each(function (event) {
                     let disciplinas = [];
-                    
+
                     $(this).find('.disciplina_set').each(function (event) {
                         disciplinas.push($(this).val());
                     });
-                    
+
                     sets.push({
                         andar: $(this).find('.andar_set').val(),
                         disciplinas_por_backbone: disciplinas
                     });
                 });
-                
+
                 seqs_secundarias.push({
                     andar: $(this).find('.andar_seq_secundaria').val(),
                     medida_basica: $(this).find('.medida_basica_seq_secundaria').val(),
@@ -106,7 +106,7 @@
                     sets: sets
                 });
             });
-            
+
             let formData = {
                 config: {
                     modo_seq_primaria: $('#id_modo_fibra_seq_primaria').val(),
@@ -150,7 +150,7 @@
                     link.click();
                 },
                 error: function (response) {
-                    alert('Houve um erro ao baixar o xlsx. Se você tentou quantificar somente o backbone secundário, por favor informe uma SEQ secundária.');
+                    alert('Houve um erro ao baixar o xlsx. Preencha todos os campos necessários para o tipo de quantificação que está tentando fazer. \nSe você tentou quantificar somente o backbone secundário, por favor, informe uma SEQ secundária.');
                 }
             });
         });
