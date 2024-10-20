@@ -3,7 +3,7 @@ from ast import parse
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.generic import View
-from .forms_quantificacao import FormConfig, FormSEQPrimaria, FormSEQSecundaria, \
+from .forms_quantificacao import FormSEQPrimaria, FormSEQSecundaria, \
     FormSET, FormChoicesInterface, FormConfigCampusInterface, FormConfigPredioInterface
 import json
 
@@ -100,7 +100,6 @@ class QuantificacaoView(View):
         form_choices_interface = FormChoicesInterface()
         form_config_campus_interface = FormConfigCampusInterface()
         form_config_predio_interface = FormConfigPredioInterface()
-        form_config = FormConfig()
         form_seq_primaria = FormSEQPrimaria()
         form_seq_secundaria = FormSEQSecundaria()
         form_set = FormSET()
@@ -108,7 +107,6 @@ class QuantificacaoView(View):
             'form_choices_interface': form_choices_interface,
             'form_config_campus_interface': form_config_campus_interface,
             'form_config_predio_interface': form_config_predio_interface,
-            'form_config': form_config,
             'form_seq_primaria': form_seq_primaria,
             'form_seq_secundaria': form_seq_secundaria,
             'form_set': form_set,
