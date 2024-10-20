@@ -8,6 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <title>Formulário de Quantificação</title>
+
+    <style>
+        .w-fit {
+            min-width: fit-content !important;
+        }
+    </style>
 </head>
 <body>
     <form method="post" id="form-quantificacao" class="m-5">
@@ -29,17 +35,10 @@
                 </p>
             </div>
         </div>
-        {% crispy form_config %}
-{#        {{ form_config|crispy }}#}
 
-        <div id="seq-primaria-config">
-            {{ form_seq_primaria|crispy }}
-            <button type="button" id="add-seq-secundaria" class="btn btn-secondary mb-3">Adicionar SEQ secundária</button>
-        </div>
+        {% crispy form_choices_interface %}
 
-        <div id="seq-secundaria-configs" class="ms-4">
-            <!-- This will be populated dynamically using JavaScript -->
-        </div>
+        <div id="quantificacao-de-fibra"></div>
 
         <button type="submit" class="btn btn-primary mb-3">Baixar quantificação como xlsx</button>
     </form>
@@ -63,78 +62,187 @@
             return cookieValue;
         }
 
-        $('#add-seq-secundaria').click(function() {
-            let seqSecundariaForm = `<div class="seq-secundaria-config">{% crispy form_seq_secundaria %}<button type="button" class="btn btn-secondary mb-3 add-set">Adicionar SET</button></div>`;
-            $('#seq-secundaria-configs').append(seqSecundariaForm);
+        $(document).on('click', '.remove-parent', function() {
+            $(this).parent().remove();
         });
 
-        $('#seq-secundaria-configs').on('click', '.add-set', function() {
-            let setForm = `<div class="ms-4 set-config">{% crispy form_set %}<button type="button" class="btn btn-secondary mb-3 add-backbone">Adicionar Backbone</button></div>`;
-            $(this).closest('.seq-secundaria-config').append(setForm);
+        function addQuantificacaoCampus() {
+            $("#quantificacao-de-fibra").append(
+                `{% include 'quantificacao_campus/quantificacao_campus.html' %}`
+            );
+        }
+
+        function addQuantificacaoPredio() {
+            $("#quantificacao-de-fibra").append(
+                `{% include 'quantificacao_predio/quantificacao_predio.html' %}`
+            );
+        }
+
+        function swapTipoQuantificacao(tipo) {
+            if (tipo === "CAMPUS") {
+                addQuantificacaoCampus();
+                $("#predio-quantificacao").remove();
+            } else {
+                $("#campus-quantificacao").remove();
+                addQuantificacaoPredio();
+            }
+        }
+
+        $("input[name='tipo_quantificacao']").change(function() {
+            swapTipoQuantificacao($(this).val());
         });
 
-        $('#seq-secundaria-configs').on('click', '.add-backbone', function() {
-            let backboneForm = `<div class="mb-3 ms-4"><input type="number" name="disciplinas_backbone" class="disciplina_set text-input form-control" placeholder="Disciplinas do Backbone chegando à SET" required></div>`;
-            $(this).parent().append(backboneForm);
-        });
+        function addSEQSecundaria() {
+            let addedSEQ = $(this).siblings('.list-seqs').append(
+                `{% include 'quantificacao_predio/quantificacao_seq_predio.html' with form_seq_predio=form_seq_secundaria %}`
+            );
 
-        $('#form-quantificacao').submit(function (event) {
-            event.preventDefault();
-            
-            let seqs_secundarias = [];
-        
-            $('.seq-secundaria-config').each(function (event) {
-                let sets = [];
-                
-                $(this).find('.set-config').each(function (event) {
-                    let disciplinas = [];
-                    
-                    $(this).find('.disciplina_set').each(function (event) {
-                        disciplinas.push($(this).val());
-                    });
-                    
-                    sets.push({
-                        andar: $(this).find('.andar_set').val(),
-                        disciplinas_por_backbone: disciplinas
-                    });
-                });
-                
-                seqs_secundarias.push({
-                    andar: $(this).find('.andar_seq_secundaria').val(),
-                    medida_basica: $(this).find('.medida_basica_seq_secundaria').val(),
-                    disciplinas: $(this).find('.disciplinas_seq_secundaria').val(),
-                    sets: sets
-                });
+            addedSEQ.find('.add-set').last().after(
+                `<button type="button" class="ms-2 mb-3 w-fit btn add-backbone remove-parent btn-outline-danger"><span aria-hidden="true">&times;</span> Remover SEQ</button>`
+            );
+        }
+
+        function addSET() {
+            $(this).siblings('.list-set').append(
+                `{% include 'quantificacao_predio/quantificacao_set.html' %}`
+            );
+        }
+
+        function addBackbone() {
+            $(this).siblings('.list-backbones').append(
+                `{% include 'quantificacao_predio/set_backbone.html' %}`
+            );
+        }
+
+        $(document).on('click', '.add-seq', addSEQSecundaria);
+        $(document).on('click', '.add-set',addSET);
+        $(document).on('click', '.add-backbone', addBackbone);
+
+        function getBackboneSET($parent) {
+            return $parent.find('.disciplina_set').val();
+        }
+
+        function getSET($parent) {
+            let disciplinas = [];
+
+            $parent.find('.container-backbone-set').each(function () {
+                disciplinas.push(getBackboneSET($(this)));
             });
-            
-            let formData = {
+
+            return {
+                andar: $parent.find('.andar_set').val(),
+                disciplinas_por_backbone: disciplinas,
+            };
+        }
+
+        function getSEQPredio($parent) {
+            let sets = [];
+
+            $parent.find('.container-set').each(function() {
+                sets.push(getSET($(this)));
+            });
+
+            return {
+                andar: $parent.find('.andar_seq_secundaria').val(),
+                medida_basica: $parent.find('.medida_basica_seq_secundaria').val(),
+                disciplinas: $parent.find('.disciplinas_seq_secundaria').val(),
+                sets: sets,
+            };
+        }
+
+        function getFibraDataFrom($select) {
+            const fibra = $select.val();
+            return {
+                modo: fibra.slice(0, 2),
+                nucleo: fibra.slice(2),
+            }
+        }
+
+        function getFormDataCampus() {
+            let $campus = $('#campus-quantificacao');
+
+            let seqs_secundarias = [];
+
+            $campus.find('.container-seq-predio').each(function () {
+                seqs_secundarias.push(getSEQPredio($(this)));
+            });
+
+            const fibra_seq_campus = getFibraDataFrom($('#id_modo_fibra_seq_primaria'));
+            const fibra_seq_predio = getFibraDataFrom($('#id_modo_fibra_seq_secundaria'));
+            const fibra_set = getFibraDataFrom($('#id_modo_fibra_set'));
+
+            return {
                 config: {
-                    modo_seq_primaria: $('#id_modo_fibra_seq_primaria').val(),
-                    nucleo_seq_primaria: $('#id_nucleo_fibra_seq_primaria').val(),
-                    indice_seq_primaria: $('#id_indice_fibra_seq_primaria').val(),
-                    categoria_seq_primaria: $('#id_categoria_fibra_seq_primaria').val(),
-                    modo_seq_secundaria: $('#id_modo_fibra_seq_secundaria').val(),
-                    nucleo_seq_secundaria: $('#id_nucleo_fibra_seq_secundaria').val(),
-                    indice_seq_secundaria: $('#id_indice_fibra_seq_secundaria').val(),
-                    categoria_seq_secundaria: $('#id_categoria_fibra_seq_secundaria').val(),
-                    modo_set: $('#id_modo_fibra_set').val(),
-                    nucleo_set: $('#id_nucleo_fibra_set').val(),
-                    indice_set: $('#id_indice_fibra_set').val(),
-                    categoria_set: $('#id_categoria_fibra_set').val(),
-                    backbone_primario: $('#id_backbone_primario').is(':checked'),
-                    backbone_secundario: $('#id_backbone_secundario').is(':checked')
+                    modo_seq_primaria: fibra_seq_campus.modo,
+                    nucleo_seq_primaria: fibra_seq_campus.nucleo,
+                    indice_seq_primaria: 'IG',
+                    categoria_seq_primaria: 'Loose',
+                    modo_seq_secundaria: fibra_seq_predio.modo,
+                    nucleo_seq_secundaria: fibra_seq_predio.nucleo,
+                    indice_seq_secundaria: 'IG',
+                    categoria_seq_secundaria: 'Loose',
+                    modo_set: fibra_set.modo,
+                    nucleo_set: fibra_set.nucleo,
+                    indice_set: 'IG',
+                    categoria_set: 'Tight',
+                    backbone_primario: true,
+                    backbone_secundario: true,
                 },
                 seq_primaria: {
                     medida_basica: $('#id_medida_basica_seq_primaria').val(),
-                    disciplinas: $('#id_disciplinas_seq_primaria').val()
+                    disciplinas: $('#id_disciplinas_seq_primaria').val(),
                 },
-                seqs_secundarias: seqs_secundarias
+                seqs_secundarias: seqs_secundarias,
             };
+        }
+
+        function getFormDataPredio() {
+            let $predio = $('#predio-quantificacao');
+
+            let seq_predio = [getSEQPredio($predio.find('.container-seq-predio'))];
+
+            const fibra_seq_predio = getFibraDataFrom($('#id_modo_fibra_seq_primaria'));
+            const fibra_set = getFibraDataFrom($('#id_modo_fibra_set'));
+
+            return {
+                config: {
+                    modo_seq_primaria: '',
+                    nucleo_seq_primaria: '',
+                    indice_seq_primaria: 'IG',
+                    categoria_seq_primaria: 'Loose',
+                    modo_seq_secundaria: fibra_seq_predio.modo,
+                    nucleo_seq_secundaria: fibra_seq_predio.nucleo,
+                    indice_seq_secundaria: 'IG',
+                    categoria_seq_secundaria: 'Loose',
+                    modo_set: fibra_set.modo,
+                    nucleo_set: fibra_set.nucleo,
+                    indice_set: 'IG',
+                    categoria_set: 'Tight',
+                    backbone_primario: false,
+                    backbone_secundario: true,
+                },
+                seq_primaria: {
+                    medida_basica: $('#id_medida_basica_seq_primaria').val(),
+                    disciplinas: $('#id_disciplinas_seq_primaria').val(),
+                },
+                seqs_secundarias: seq_predio,
+            };
+        }
+
+        function getFormData() {
+            if ($("input[name='tipo_quantificacao']:checked").val() === 'CAMPUS')
+                return getFormDataCampus();
+            else
+                return getFormDataPredio();
+        }
+
+        $('#form-quantificacao').submit(function (event) {
+            event.preventDefault();
 
             $.ajax({
                 type: 'POST',
                 url: '{% url "quantificacao_form" %}',
-                data: JSON.stringify(formData),
+                data: JSON.stringify(getFormData()),
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRFToken": getCookie("csrftoken"),
