@@ -158,6 +158,10 @@
             }
         }
 
+        function inferirIndice(modo) {
+            return modo === 'SM' ? '' : 'IG';
+        }
+
         function getFormDataCampus() {
             let $campus = $('#campus-quantificacao');
 
@@ -175,15 +179,15 @@
                 config: {
                     modo_seq_primaria: fibra_seq_campus.modo,
                     nucleo_seq_primaria: fibra_seq_campus.nucleo,
-                    indice_seq_primaria: 'IG',
+                    indice_seq_primaria: inferirIndice(fibra_seq_campus.modo),
                     categoria_seq_primaria: 'Loose',
                     modo_seq_secundaria: fibra_seq_predio.modo,
                     nucleo_seq_secundaria: fibra_seq_predio.nucleo,
-                    indice_seq_secundaria: 'IG',
+                    indice_seq_secundaria: inferirIndice(fibra_seq_predio.modo),
                     categoria_seq_secundaria: 'Loose',
                     modo_set: fibra_set.modo,
                     nucleo_set: fibra_set.nucleo,
-                    indice_set: 'IG',
+                    indice_set: inferirIndice(fibra_set.modo),
                     categoria_set: 'Tight',
                     backbone_primario: true,
                     backbone_secundario: true,
@@ -208,15 +212,15 @@
                 config: {
                     modo_seq_primaria: '',
                     nucleo_seq_primaria: '',
-                    indice_seq_primaria: 'IG',
+                    indice_seq_primaria: '',
                     categoria_seq_primaria: 'Loose',
                     modo_seq_secundaria: fibra_seq_predio.modo,
                     nucleo_seq_secundaria: fibra_seq_predio.nucleo,
-                    indice_seq_secundaria: 'IG',
+                    indice_seq_secundaria: inferirIndice(fibra_seq_predio.modo),
                     categoria_seq_secundaria: 'Loose',
                     modo_set: fibra_set.modo,
                     nucleo_set: fibra_set.nucleo,
-                    indice_set: 'IG',
+                    indice_set: inferirIndice(fibra_set.modo),
                     categoria_set: 'Tight',
                     backbone_primario: false,
                     backbone_secundario: true,
